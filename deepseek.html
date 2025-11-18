@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>倒计时器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(0, 0, 0, 0.4);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #ff8a00, #da1b60);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+        
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 30px;
+        }
+        
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+        }
+        
+        .countdown-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        
+        input, button {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            font-size: 1rem;
+        }
+        
+        input {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #da1b60;
+            box-shadow: 0 0 10px rgba(218, 27, 96, 0.5);
+        }
+        
+        button {
+            background: linear-gradient(to right, #ff8a00, #da1b60);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .countdown-display {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .time-unit {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px 15px;
+            min-width: 100px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .time-value {
+            font-size: 3rem;
+            font-weight: bold;
+            display: block;
+            background: linear-gradient(to bottom, #fff, #ddd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .time-label {
+            font-size: 1rem;
+            margin-top: 10px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .message {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-top: 20px;
+            min-height: 50px;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .preset-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .time-unit {
+                min-width: 80px;
+                padding: 15px 10px;
+            }
+            
+            .time-value {
+                font-size: 2.2rem;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .time-unit {
+                min-width: 70px;
+                padding: 12px 8px;
+            }
+            
+            .time-value {
+                font-size: 1.8rem;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .countdown-display {
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>倒计时器</h1>
+            <p class="subtitle">设置目标日期，开始倒计时</p>
+        </header>
+        
+        <div class="content">
+            <div class="input-section">
+                <div class="form-group">
+                    <label for="target-date">目标日期</label>
+                    <input type="date" id="target-date">
+                </div>
+                
+                <div class="form-group">
+                    <label for="target-time">目标时间</label>
+                    <input type="time" id="target-time" value="23:59">
+                </div>
+                
+                <button id="start-btn">开始倒计时</button>
+                <button id="reset-btn">重置</button>
+                
+                <div class="preset-buttons">
+                    <button class="preset-btn" data-days="1">1天后</button>
+                    <button class="preset-btn" data-days="7">1周后</button>
+                    <button class="preset-btn" data-days="30">1个月后</button>
+                    <button class="preset-btn" data-days="365">1年后</button>
+                </div>
+            </div>
+            
+            <div class="countdown-section">
+                <div class="countdown-display">
+                    <div class="time-unit">
+                        <span class="time-value" id="days">00</span>
+                        <span class="time-label">天</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="time-value" id="hours">00</span>
+                        <span class="time-label">小时</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="time-value" id="minutes">00</span>
+                        <span class="time-label">分钟</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="time-value" id="seconds">00</span>
+                        <span class="time-label">秒</span>
+                    </div>
+                </div>
+                
+                <div class="message" id="message">
+                    请设置目标日期和时间
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>倒计时器 &copy; 2023 - 让时间管理更简单</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const targetDateInput = document.getElementById('target-date');
+            const targetTimeInput = document.getElementById('target-time');
+            const startBtn = document.getElementById('start-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const presetBtns = document.querySelectorAll('.preset-btn');
+            const daysEl = document.getElementById('days');
+            const hoursEl = document.getElementById('hours');
+            const minutesEl = document.getElementById('minutes');
+            const secondsEl = document.getElementById('seconds');
+            const messageEl = document.getElementById('message');
+            
+            // 设置默认目标日期为明天
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            targetDateInput.valueAsDate = tomorrow;
+            
+            let countdownInterval;
+            
+            // 开始倒计时
+            startBtn.addEventListener('click', startCountdown);
+            
+            // 重置倒计时
+            resetBtn.addEventListener('click', resetCountdown);
+            
+            // 预设按钮
+            presetBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const days = parseInt(this.getAttribute('data-days'));
+                    setPresetDate(days);
+                });
+            });
+            
+            // 开始倒计时函数
+            function startCountdown() {
+                const targetDate = new Date(targetDateInput.value + ' ' + targetTimeInput.value);
+                
+                if (isNaN(targetDate.getTime())) {
+                    messageEl.textContent = '请选择有效的日期和时间';
+                    return;
+                }
+                
+                if (targetDate <= new Date()) {
+                    messageEl.textContent = '请选择未来的日期和时间';
+                    return;
+                }
+                
+                // 清除之前的倒计时
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                }
+                
+                messageEl.textContent = '倒计时进行中...';
+                
+                // 更新倒计时显示
+                updateCountdown(targetDate);
+                
+                // 每秒更新一次
+                countdownInterval = setInterval(() => {
+                    updateCountdown(targetDate);
+                }, 1000);
+            }
+            
+            // 更新倒计时显示
+            function updateCountdown(targetDate) {
+                const now = new Date().getTime();
+                const distance = targetDate.getTime() - now;
+                
+                if (distance < 0) {
+                    clearInterval(countdownInterval);
+                    daysEl.textContent = '00';
+                    hoursEl.textContent = '00';
+                    minutesEl.textContent = '00';
+                    secondsEl.textContent = '00';
+                    messageEl.textContent = '时间到！';
+                    return;
+                }
+                
+                // 计算天、时、分、秒
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                // 更新显示
+                daysEl.textContent = formatTime(days);
+                hoursEl.textContent = formatTime(hours);
+                minutesEl.textContent = formatTime(minutes);
+                secondsEl.textContent = formatTime(seconds);
+            }
+            
+            // 格式化时间，确保两位数显示
+            function formatTime(time) {
+                return time < 10 ? `0${time}` : time;
+            }
+            
+            // 重置倒计时
+            function resetCountdown() {
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                }
+                
+                daysEl.textContent = '00';
+                hoursEl.textContent = '00';
+                minutesEl.textContent = '00';
+                secondsEl.textContent = '00';
+                messageEl.textContent = '倒计时已重置';
+                
+                // 重置日期为明天
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                targetDateInput.valueAsDate = tomorrow;
+                targetTimeInput.value = '23:59';
+            }
+            
+            // 设置预设日期
+            function setPresetDate(days) {
+                const targetDate = new Date();
+                targetDate.setDate(targetDate.getDate() + days);
+                
+                // 格式化日期为 YYYY-MM-DD
+                const year = targetDate.getFullYear();
+                const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+                const day = String(targetDate.getDate()).padStart(2, '0');
+                
+                targetDateInput.value = `${year}-${month}-${day}`;
+                targetTimeInput.value = '23:59';
+                
+                messageEl.textContent = `已设置为${days}天后`;
+            }
+        });
+    </script>
+</body>
+</html>
