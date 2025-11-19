@@ -27,7 +27,7 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
   cookie: {
-    secure: false, // 生产环境设为true
+    secure: true, // 生产环境设为true
     maxAge: 24 * 60 * 60 * 1000 // 24小时
   }
 }));
