@@ -6,7 +6,7 @@ const pool = new Pool({
     rejectUnauthorized: false
   }
 });
-
+console.log(process.env.DATABASE_URL)
 // 创建表结构
 async function initializeDatabase() {
   try {
