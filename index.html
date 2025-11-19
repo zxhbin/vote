@@ -562,28 +562,6 @@
     </div>
 
     <script>
-        // 学生数据
-        const students = [
-            { id: 1, name: "吴坤奕", project: "养老管家App" },
-            { id: 2, name: "张奇睿", project: "家庭养生小助手" },
-            { id: 3, name: "张瑜", project: "强国先锋App" },
-            { id: 4, name: "胡暄晨", project: "家庭智慧管家App" },
-            { id: 5, name: "许银萍", project: "红色诗词学习平台" },
-            { id: 6, name: "沈鹏宇", project: "智能矿井警报系统" },
-            { id: 7, name: "李嘉鑫", project: "党课学习平台" },
-            { id: 8, name: "于峻浩", project: "图书馆智能管理系统" },
-            { id: 9, name: "修嘉澳", project: "草莓种植园环境监测系统" },
-            { id: 10, name: "王相奇", project: "智能停车场管理系统" },
-            { id: 11, name: "齐洺宇", project: "校园生活助手" },
-            { id: 12, name: "陈静晗", project: "党员志愿服务平台" },
-            { id: 13, name: "李方舒", project: "番茄学习助手" },
-            { id: 14, name: "石雨桐", project: "智能健康个人助手" },
-            { id: 15, name: "王晶", project: "党史知多少·闯关App" },
-            { id: 16, name: "蔺茹", project: "党课宝" },
-            { id: 17, name: "郭茂杨", project: "红色旅游平台" },
-            { id: 18, name: "杨世鹏", project: "爱天气系统" }
-        ];
-
         // 奖项列表
         const awards = [
             { id: 'tech', name: '最佳技术实现奖', icon: 'fas fa-code' },
@@ -592,13 +570,16 @@
             { id: 'presentation', name: '最佳演讲风采奖', icon: 'fas fa-microphone-alt' }
         ];
 
-        // 投票数据
+        // 当前投票数据
         let votes = {
             tech: null,
             innovation: null,
             ux: null,
             presentation: null
         };
+
+        // 学生数据
+        let students = [];
 
         // 投票统计
         let voteStats = {
@@ -609,9 +590,96 @@
             total: 0
         };
 
+        // 用户信息
+        let userInfo = {
+            userId: null,
+            hasVoted: false
+        };
+
+        // API基础URL
+        const API_BASE = '';
+
         // 初始化页面
-        function initializePage() {
-            // 为每个奖项生成学生列表
+        async function initializePage() {
+            try {
+                // 获取用户信息
+                await loadUserInfo();
+                
+                // 获取学生列表
+                await loadStudents();
+                
+                // 获取投票统计
+                await loadVoteStats();
+                
+                // 生成学生列表
+                generateStudentLists();
+                
+                // 添加事件监听器
+                document.getElementById('submit-btn').addEventListener('click', submitVotes);
+                document.getElementById('reset-btn').addEventListener('click', resetVotes);
+                
+                // 初始化统计显示
+                updateResultsDisplay();
+                
+                // 如果用户已经投票，禁用投票界面
+                if (userInfo.hasVoted) {
+                    disableVoting();
+                }
+                
+                // 定期刷新统计数据
+                setInterval(loadVoteStats, 5000); // 每5秒刷新一次
+                
+            } catch (error) {
+                console.error('初始化失败:', error);
+                showError('系统初始化失败，请刷新页面重试');
+            }
+        }
+
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/api/user`);
+                if (response.ok) {
+                    userInfo = await response.json();
+                } else {
+                    throw new Error('获取用户信息失败');
+                }
+            } catch (error) {
+                console.error('加载用户信息失败:', error);
+                throw error;
+            }
+        }
+
+        // 加载学生列表
+        async function loadStudents() {
+            try {
+                const response = await fetch(`${API_BASE}/api/students`);
+                if (response.ok) {
+                    students = await response.json();
+                } else {
+                    throw new Error('获取学生列表失败');
+                }
+            } catch (error) {
+                console.error('加载学生列表失败:', error);
+                throw error;
+            }
+        }
+
+        // 加载投票统计
+        async function loadVoteStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/stats`);
+                if (response.ok) {
+                    voteStats = await response.json();
+                    updateResultsDisplay();
+                }
+            } catch (error) {
+                console.error('加载投票统计失败:', error);
+            }
+        }
+
+        // 生成学生列表
+        function generateStudentLists() {
             awards.forEach(award => {
                 const listElement = document.getElementById(`${award.id}-list`);
                 listElement.innerHTML = '';
@@ -628,23 +696,16 @@
                     `;
                     
                     studentItem.addEventListener('click', () => {
-                        selectStudent(award.id, student.id);
+                        if (!userInfo.hasVoted) {
+                            selectStudent(award.id, student.id);
+                        } else {
+                            showInfo('您已经投过票了，无法修改选择');
+                        }
                     });
                     
                     listElement.appendChild(studentItem);
                 });
             });
-            
-            // 添加事件监听器
-            document.getElementById('submit-btn').addEventListener('click', submitVotes);
-            document.getElementById('reset-btn').addEventListener('click', resetVotes);
-            
-            // 从本地存储加载之前的投票和统计（如果有）
-            loadVotesFromStorage();
-            loadStatsFromStorage();
-            
-            // 初始化统计显示
-            updateResultsDisplay();
         }
 
         // 选择学生
@@ -659,7 +720,7 @@
             // 检查该学生是否已经在其他奖项中被选中
             for (const key in votes) {
                 if (votes[key] === studentId) {
-                    alert('该同学已在其他奖项中被选中，请先取消选择！');
+                    showWarning('该同学已在其他奖项中被选中，请先取消选择！');
                     return;
                 }
             }
@@ -691,18 +752,20 @@
                     }
                 }
             });
-            
-            // 保存到本地存储
-            saveVotesToStorage();
         }
 
         // 提交投票
-        function submitVotes() {
+        async function submitVotes() {
+            if (userInfo.hasVoted) {
+                showWarning('您已经投过票了，无法重复投票');
+                return;
+            }
+            
             // 检查是否所有奖项都已投票
             const incompleteAwards = awards.filter(award => votes[award.id] === null);
             
             if (incompleteAwards.length > 0) {
-                alert(`请完成所有奖项的投票！\n未完成的奖项：${incompleteAwards.map(a => a.name).join('、')}`);
+                showWarning(`请完成所有奖项的投票！\n未完成的奖项：${incompleteAwards.map(a => a.name).join('、')}`);
                 return;
             }
             
@@ -713,37 +776,61 @@
                 resultMessage += `${award.name}：${student.name} - ${student.project}\n`;
             });
             
-            resultMessage += "\n确认提交吗？";
+            resultMessage += "\n确认提交吗？提交后无法修改！";
             
             if (confirm(resultMessage)) {
-                // 更新投票统计
-                updateVoteStats();
-                
-                // 显示成功消息
-                alert("投票成功提交！感谢您的参与！");
-                
-                // 重置当前投票
-                resetCurrentVotes();
-                
-                // 更新统计显示
-                updateResultsDisplay();
+                try {
+                    // 发送投票数据到服务器
+                    const response = await fetch(`${API_BASE}/api/vote`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(votes)
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        showSuccess('投票成功提交！感谢您的参与！');
+                        
+                        // 更新用户状态
+                        userInfo.hasVoted = true;
+                        
+                        // 禁用投票界面
+                        disableVoting();
+                        
+                        // 刷新统计数据
+                        await loadVoteStats();
+                        
+                        // 重置当前投票显示
+                        resetCurrentVotes();
+                        
+                    } else {
+                        const error = await response.json();
+                        showError(error.error || '投票失败，请重试');
+                    }
+                } catch (error) {
+                    console.error('提交投票失败:', error);
+                    showError('网络错误，请检查连接后重试');
+                }
             }
         }
 
-        // 更新投票统计
-        function updateVoteStats() {
-            awards.forEach(award => {
-                const studentId = votes[award.id];
-                if (studentId) {
-                    if (!voteStats[award.id][studentId]) {
-                        voteStats[award.id][studentId] = 0;
-                    }
-                    voteStats[award.id][studentId]++;
-                }
+        // 禁用投票界面
+        function disableVoting() {
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.textContent = '已投票';
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+            submitBtn.style.cursor = 'not-allowed';
+            
+            // 禁用所有学生选择
+            document.querySelectorAll('.student-item').forEach(item => {
+                item.style.cursor = 'not-allowed';
+                item.style.opacity = '0.7';
             });
             
-            voteStats.total++;
-            saveStatsToStorage();
+            showInfo('您已经完成投票，可以查看实时统计结果');
         }
 
         // 更新统计结果显示
@@ -756,18 +843,41 @@
                 resultItem.className = `result-item ${award.id}`;
                 
                 // 计算该奖项的总票数
-                const awardVotes = voteStats[award.id];
-                const totalAwardVotes = Object.values(awardVotes).reduce((sum, count) => sum + count, 0);
+                const awardVotes = voteStats[award.id] || {};
+                const totalAwardVotes = Object.values(awardVotes).reduce((sum, item) => sum + item.count, 0);
                 
                 // 找到当前领先者
-                let leader = { id: null, votes: 0 };
+                let leader = null;
+                let maxVotes = 0;
+                
                 for (const studentId in awardVotes) {
-                    if (awardVotes[studentId] > leader.votes) {
-                        leader = { id: parseInt(studentId), votes: awardVotes[studentId] };
+                    if (awardVotes[studentId].count > maxVotes) {
+                        maxVotes = awardVotes[studentId].count;
+                        leader = {
+                            id: parseInt(studentId),
+                            votes: awardVotes[studentId].count,
+                            name: awardVotes[studentId].name,
+                            project: awardVotes[studentId].project
+                        };
                     }
                 }
                 
-                const leaderStudent = leader.id ? students.find(s => s.id === leader.id) : null;
+                const voteItems = Object.entries(awardVotes).map(([studentId, data]) => {
+                    const percentage = totalAwardVotes > 0 ? Math.round((data.count / totalAwardVotes) * 100) : 0;
+                    return `
+                        <div class="vote-item">
+                            <div class="vote-bar">
+                                <div class="vote-fill" style="width: ${percentage}%">
+                                    ${percentage}%
+                                </div>
+                            </div>
+                            <div class="vote-stats">
+                                <span>${data.name} - ${data.project}</span>
+                                <span>${data.count} 票</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
                 
                 resultItem.innerHTML = `
                     <h3 class="result-title">
@@ -775,38 +885,28 @@
                         ${award.name}
                     </h3>
                     <div class="result-content">
-                        ${leaderStudent ? `
+                        ${leader ? `
                             <div class="winner">
                                 <i class="fas fa-crown"></i>
-                                当前领先: ${leaderStudent.name} - ${leaderStudent.project}
+                                当前领先: ${leader.name} - ${leader.project}
                             </div>
                         ` : '<div class="winner">暂无投票</div>'}
                         
-                        ${Object.entries(awardVotes).map(([studentId, count]) => {
-                            const student = students.find(s => s.id === parseInt(studentId));
-                            const percentage = totalAwardVotes > 0 ? Math.round((count / totalAwardVotes) * 100) : 0;
-                            return `
-                                <div class="vote-item">
-                                    <div class="vote-bar">
-                                        <div class="vote-fill" style="width: ${percentage}%">
-                                            ${percentage}%
-                                        </div>
-                                    </div>
-                                    <div class="vote-stats">
-                                        <span>${student.name} - ${student.project}</span>
-                                        <span>${count} 票</span>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('') || '<p style="text-align:center; color:#7f8c8d; margin:20px 0;">暂无投票数据</p>'}
+                        ${voteItems || '<p style="text-align:center; color:#7f8c8d; margin:20px 0;">暂无投票数据</p>'}
                     </div>
                 `;
                 
                 resultsContainer.appendChild(resultItem);
             });
-            
+            console.log(voteStats.total)
             // 更新总票数
-            document.getElementById('total-votes').textContent = voteStats.total;
+            const totalVotesElement = document.getElementById('total-votes');
+            const totalVotes = voteStats.total || 0;
+            totalVotesElement.textContent = totalVotes;
+            
+            // 调试信息
+            console.log('投票统计数据:', voteStats);
+            console.log('总投票数:', totalVotes);
         }
 
         // 重置当前投票
@@ -819,36 +919,31 @@
 
         // 重置投票
         function resetVotes() {
+            if (userInfo.hasVoted) {
+                showWarning('您已经投过票了，无法重置选择');
+                return;
+            }
+            
             if (confirm("确定要重置所有选择吗？")) {
                 resetCurrentVotes();
             }
         }
 
-        // 保存投票到本地存储
-        function saveVotesToStorage() {
-            localStorage.setItem('makerShowVotes', JSON.stringify(votes));
+        // 消息提示函数
+        function showSuccess(message) {
+            alert(message);
         }
 
-        // 从本地存储加载投票
-        function loadVotesFromStorage() {
-            const savedVotes = localStorage.getItem('makerShowVotes');
-            if (savedVotes) {
-                votes = JSON.parse(savedVotes);
-                updateUI();
-            }
+        function showError(message) {
+            alert('错误: ' + message);
         }
 
-        // 保存统计到本地存储
-        function saveStatsToStorage() {
-            localStorage.setItem('makerShowStats', JSON.stringify(voteStats));
+        function showWarning(message) {
+            alert('警告: ' + message);
         }
 
-        // 从本地存储加载统计
-        function loadStatsFromStorage() {
-            const savedStats = localStorage.getItem('makerShowStats');
-            if (savedStats) {
-                voteStats = JSON.parse(savedStats);
-            }
+        function showInfo(message) {
+            alert('提示: ' + message);
         }
 
         // 页面加载完成后初始化
